@@ -9,13 +9,15 @@ class Sil7021(object):
     SI7021_DEFAULT_ADDRESS = 0x40
     SI7021_MEASTEMP_NOHOLD_CMD = bytearray([0xF3])
     SI7021_MEASRH_NOHOLD_CMD = bytearray([0xF5])
+    SI7021_RESET_CMD = bytearray([0xFE])
+
 
     def __init__(self, i2c, address=SI7021_DEFAULT_ADDRESS):
         self.i2c = i2c
         self.address = address
 
 
-    def temperature(self):
+    def read_temperature(self):
         """temperature
         """
         temperature, verified = self._get_data(self.SI7021_MEASTEMP_NOHOLD_CMD)
@@ -27,7 +29,7 @@ class Sil7021(object):
             return None
 
 
-    def humidity(self):
+    def read_humidity(self):
         """humidity
         """
         humidity, verified = self._get_data(self.SI7021_MEASRH_NOHOLD_CMD)
@@ -36,6 +38,13 @@ class Sil7021(object):
             return humidity
         else:
             return None
+
+
+    def reset(self):
+        """Reset
+        """
+        self.i2c.writeto(self.address, self.SI7021_RESET_CMD)
+        sleep(0.050)
 
 
     def _get_data(self, command):
