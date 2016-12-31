@@ -8,29 +8,54 @@ class Sil7021(object):
 
     SI7021_DEFAULT_ADDRESS = 0x40
     SI7021_MEASTEMP_NOHOLD_CMD = bytearray([0xF3])
+    SI7021_MEASRH_NOHOLD_CMD = bytearray([0xF5])
 
     def __init__(self, i2c, address=SI7021_DEFAULT_ADDRESS):
         self.i2c = i2c
         self.address = address
 
+
     def temperature(self):
         """temperature
         """
-        data = bytearray(3)
-        self.i2c.writeto(self.address, self.SI7021_MEASTEMP_NOHOLD_CMD)
-        sleep(0.025)
-
-        self.i2c.readfrom_into(self.address, data)
-        temperature = data[0] << 8
-        temperature = temperature | data[1]
+        temperature, verified = self._get_data(self.SI7021_MEASTEMP_NOHOLD_CMD)
         celcius = temperature * 175.72 / 65536 - 46.85
         fahrenheit = celcius * 1.8 + 32
-        if self._verify_checksum(data):
+        if verified:
             return {'celcius': celcius, 'fahrenheit': fahrenheit}
         else:
             return None
 
+
+    def humidity(self):
+        """humidity
+        """
+        humidity, verified = self._get_data(self.SI7021_MEASRH_NOHOLD_CMD)
+        humidity = humidity * 125 / 65536 - 6
+        if verified:
+            return humidity
+        else:
+            return None
+
+
+    def _get_data(self, command):
+        """get_data
+        """
+        data = bytearray(3)
+        self.i2c.writeto(self.address, command)
+        sleep(0.025)
+
+        self.i2c.readfrom_into(self.address, data)
+        value = data[0] << 8
+        value = value | data[1]
+
+        verified = self._verify_checksum(data)
+        return (value, verified)
+
+
     def _verify_checksum(self, data):
+        """verify_checksum
+        """
         crc = 0
         value = data[:2]
         checksum = int(data[2:3][0])
