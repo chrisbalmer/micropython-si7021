@@ -18,6 +18,7 @@ class Si7021(object):
     def __init__(self, i2c, address=SI7021_DEFAULT_ADDRESS):
         self.i2c = i2c
         self.address = address
+        self.serial, self.identifier = self._get_device_info()
 
 
     def read_temperature(self):
@@ -25,9 +26,17 @@ class Si7021(object):
         """
         temperature, verified = self._get_data(self.SI7021_MEASTEMP_NOHOLD_CMD)
         celcius = temperature * 175.72 / 65536 - 46.85
-        fahrenheit = celcius * 1.8 + 32
         if verified:
-            return {'celcius': celcius, 'fahrenheit': fahrenheit}
+            return celcius
+        else:
+            return None
+
+    def read_temperature_as_fahrenheit(self):
+        """temperature as fahrenheit
+        """
+        celcius = self.read_temperature()
+        if celcius:
+            return celcius * 1.8 + 32
         else:
             return None
 
@@ -58,60 +67,56 @@ class Si7021(object):
         sleep(0.025)
 
         self.i2c.readfrom_into(self.address, data)
-        value = data[0] << 8
-        value = value | data[1]
+        value = self._convert_to_integer(data[:2])
 
         verified = self._verify_checksum(data)
         return (value, verified)
 
 
-    def _get_model_info(self):
-        info = []
-
+    def _get_device_info(self):
         # Serial 1st half
         self.i2c.writeto(self.address, self.SI7021_ID1_CMD)
         id1 = bytearray(8)
         sleep(0.025)
         self.i2c.readfrom_into(self.address, id1)
-        print(id1)
-        serial = id1[0] << 8
-        serial = serial | id1[2]
-        serial = serial << 8
-        serial = serial | id1[4]
-        serial = serial << 8
-        serial = serial | id1[6]
-        info.append(serial)
-
-        sleep(0.025)
 
         # Serial 2nd half
         self.i2c.writeto(self.address, self.SI7021_ID2_CMD)
         id2 = bytearray(6)
         sleep(0.025)
         self.i2c.readfrom_into(self.address, id2)
-        print(id2)
-        serial = id2[0] << 8
-        serial = serial | id2[1]
-        serial = serial << 8
-        serial = serial | id2[3]
-        serial = serial << 8
-        serial = serial | id2[4]
-        info.append(serial)
 
-        if id2[0] == 0x00 or id2[0] == 0xFF:
-            model = 'engineering sample'
-        elif id2[0] == 0x0D:
-            model = 'Si7013'
-        elif id2[0] == 0x14:
-            model = 'Si7020'
-        elif id2[0] == 0x15:
-            model = 'Si7021'
+        combined_id = bytearray([id1[0], id1[2], id1[4], id1[6],
+                                 id2[0], id2[1], id2[3], id2[4]])
+
+        serial = self._convert_to_integer(combined_id)
+        identifier = self._get_device_identifier(id2[0])
+
+        return serial, identifier
+
+    def _convert_to_integer(self, bytes_to_convert):
+        integer = None
+        for chunk in bytes_to_convert:
+            if not integer:
+                integer = chunk
+            else:
+                integer = integer << 8
+                integer = integer | chunk
+        return integer
+
+
+    def _get_device_identifier(self, identifier_byte):
+        if identifier_byte == 0x00 or identifier_byte == 0xFF:
+            return 'engineering sample'
+        elif identifier_byte == 0x0D:
+            return 'Si7013'
+        elif identifier_byte == 0x14:
+            return 'Si7020'
+        elif identifier_byte == 0x15:
+            return 'Si7021'
         else:
-            model = 'unknown'
+            return 'unknown'
 
-        info.append(model)
-
-        return info
 
     def _verify_checksum(self, data):
         """verify_checksum
