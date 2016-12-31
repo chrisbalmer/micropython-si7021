@@ -21,13 +21,10 @@ class Sil7021(object):
         sleep(0.025)
 
         self.i2c.readfrom_into(self.address, data)
-        print(data)
         temperature = data[0] << 8
         temperature = temperature | data[1]
         celcius = temperature * 175.72 / 65536 - 46.85
         fahrenheit = celcius * 1.8 + 32
-        print(celcius)
-        print(fahrenheit)
         if self._verify_checksum(data):
             return {'celcius': celcius, 'fahrenheit': fahrenheit}
         else:
@@ -36,9 +33,7 @@ class Sil7021(object):
     def _verify_checksum(self, data):
         crc = 0
         value = data[:2]
-        print(value)
         checksum = int(data[2:3][0])
-        print(checksum)
         for i in range(0, 2):
             crc = crc ^ value[i]
             for _ in range(8, 0, -1):
