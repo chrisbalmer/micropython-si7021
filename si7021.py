@@ -1,15 +1,18 @@
-"""sil7021
+"""si7021
 """
 from time import sleep
 
-class Sil7021(object):
-    """Sil7021
+class Si7021(object):
+    """Si7021
     """
 
     SI7021_DEFAULT_ADDRESS = 0x40
     SI7021_MEASTEMP_NOHOLD_CMD = bytearray([0xF3])
     SI7021_MEASRH_NOHOLD_CMD = bytearray([0xF5])
     SI7021_RESET_CMD = bytearray([0xFE])
+    SI7021_ID1_CMD = bytearray([0xFA, 0x0F])
+    SI7021_ID2_CMD = bytearray([0xFC, 0xC9])
+    SI7021_ID_COMMANDS = [SI7021_ID1_CMD, SI7021_ID2_CMD]
 
 
     def __init__(self, i2c, address=SI7021_DEFAULT_ADDRESS):
@@ -61,6 +64,54 @@ class Sil7021(object):
         verified = self._verify_checksum(data)
         return (value, verified)
 
+
+    def _get_model_info(self):
+        info = []
+
+        # Serial 1st half
+        self.i2c.writeto(self.address, self.SI7021_ID1_CMD)
+        id1 = bytearray(8)
+        sleep(0.025)
+        self.i2c.readfrom_into(self.address, id1)
+        print(id1)
+        serial = id1[0] << 8
+        serial = serial | id1[2]
+        serial = serial << 8
+        serial = serial | id1[4]
+        serial = serial << 8
+        serial = serial | id1[6]
+        info.append(serial)
+
+        sleep(0.025)
+
+        # Serial 2nd half
+        self.i2c.writeto(self.address, self.SI7021_ID2_CMD)
+        id2 = bytearray(6)
+        sleep(0.025)
+        self.i2c.readfrom_into(self.address, id2)
+        print(id2)
+        serial = id2[0] << 8
+        serial = serial | id2[1]
+        serial = serial << 8
+        serial = serial | id2[3]
+        serial = serial << 8
+        serial = serial | id2[4]
+        info.append(serial)
+
+        if id2[0] == 0x00 or id2[0] == 0xFF:
+            model = 'engineering sample'
+        elif id2[0] == 0x0D:
+            model = 'Si7013'
+        elif id2[0] == 0x14:
+            model = 'Si7020'
+        elif id2[0] == 0x15:
+            model = 'Si7021'
+        else:
+            model = 'unknown'
+
+        info.append(model)
+
+        return info
 
     def _verify_checksum(self, data):
         """verify_checksum
