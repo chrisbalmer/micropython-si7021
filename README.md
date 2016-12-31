@@ -2,6 +2,8 @@
 
 This is a micropython driver written for the [Adafruit Si7021](https://www.adafruit.com/products/3251) breakout. The included example is designed to run on an Adafruit Feather Huzzah but can be easily modified for other controllers by changing the pins used.
 
+Some parts based on the [Adafruit Si7021 C++ driver](https://github.com/adafruit/Adafruit_Si7021).
+
 ## Requirements:
 
 - MicroPython (tested on v1.8.6)
