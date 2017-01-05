@@ -14,31 +14,17 @@ Some parts based on the [Adafruit Si7021 C++ driver](https://github.com/adafruit
 ![Fritzing Diagram](example.png?raw=true "Fritzing Diagram")
 
 ```
-import si7021
-import machine
-i2c = machine.I2C(machine.Pin(5), machine.Pin(4))
-temp_sensor = si7021.Si7021(i2c)
+>>> import example
+>>> example.run_example()
+Serial:              2883507688463925247
+Identifier:          Si7021
+Temperature:         21.88713
+Relative Humidity:   30.55624
 
-print(temp_sensor.serial)
-2883507688463925247
+Module reset.
 
-print(temp_sensor.identifier)
-Si7021
-
-print(temp_sensor.temperature)
-24.7722
-
-print(temp_sensor.humidity)
-38.59
-
-temp_sensor.reset()
-
-print(temp_sensor.temperature)
-24.78291
-
-print(temp_sensor.humidity)
-37.8652
-
-print(si7021.convert_celcius_to_fahrenheit(temp_sensor.temperature))
-76.43548
+Temperature:         21.89787
+Relative Humidity:   30.53336
+Fahrenheit:          71.45477
+>>> 
 ```

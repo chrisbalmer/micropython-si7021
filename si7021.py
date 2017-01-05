@@ -45,15 +45,15 @@ class Si7021(object):
 
 
     @property
-    def humidity(self):
-        'Return the humidity as a percentage. i.e. 35.59927'
-        humidity = self._get_data(self.SI7021_MEASRH_NOHOLD_CMD)
-        humidity = humidity * 125 / 65536 - 6
-        return humidity
+    def relative_humidity(self):
+        'Return the relative humidity as a percentage. i.e. 35.59927'
+        relative_humidity = self._get_data(self.SI7021_MEASRH_NOHOLD_CMD)
+        relative_humidity = relative_humidity * 125 / 65536 - 6
+        return relative_humidity
 
 
-    @humidity.setter
-    def humidity(self, value):
+    @relative_humidity.setter
+    def relative_humidity(self, value):
         raise AttributeError('can\'t set attribute')
 
 
